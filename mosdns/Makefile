@@ -5,10 +5,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mosdns
-PKG_VERSION:=cee9e6d
+PKG_VERSION:=525c394
 PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=mosdns-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/$(PKG_VERSION)?
 PKG_HASH:=skip
 
@@ -51,7 +51,7 @@ config MOSDNS_COMPRESS_GOPROXY
 
 config MOSDNS_COMPRESS_UPX
 	bool "Compress executable files with UPX"
-	default y
+	default n
 endef
 
 ifeq ($(CONFIG_MOSDNS_COMPRESS_GOPROXY),y)
@@ -63,9 +63,14 @@ define Build/Prepare
 	$(call Build/Prepare/Default)
 endef
 
-GO_PKG_TARGET_VARS:=$(filter-out CGO_ENABLED=%,$(GO_PKG_TARGET_VARS)) CGO_ENABLED=0
+define Build/UpdateDependencies
+	cd $(PKG_BUILD_DIR) && \
+		go get -u=patch && \
+		go mod tidy
+endef
 
 define Build/Compile
+	$(call Build/UpdateDependencies)
 	$(call GoPackage/Build/Compile)
 ifneq ($(CONFIG_MOSDNS_COMPRESS_UPX),)
 	$(STAGING_DIR_HOST)/bin/upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/mosdns
